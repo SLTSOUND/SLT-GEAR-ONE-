@@ -6,10 +6,6 @@ SLT GEAR ONE is a web-based control interface for the SLT GEAR ONE audio hardwar
 
 - Features
 - Quick Start
-- File Structure<img width="1466" height="812" alt="Screenshot 2026-01-14 010731" src="https://github.com/user-attachments/assets/bf69710b-c0f5-4944-86ab-209067779ae3" />
-<img width="1904" height="819" alt="Screenshot 2026-01-14 010649" src="https://github.com/user-attachments/assets/411e45fe-36fd-489a-9b6a-53e0d2232907" />
-<img width="759" height="729" alt="Screenshot 2026-01-14 010620" src="https://github.com/user-attachments/assets/471fd876-4217-4878-9a2c-976fcca16423" />
-
 - Development
 - Contributing
 - License
@@ -60,6 +56,9 @@ This project is provided under the MIT License unless another license is include
 
 ## Contact
 
-
+- File Structure<img width="1466" height="812" alt="Screenshot 2026-01-14 010731" src="https://github.com/user-attachments/assets/bf69710b-c0f5-4944-86ab-209067779ae3" />
+<img width="1904" height="819" alt="Screenshot 2026-01-14 010649" src="https://github.com/user-attachments/assets/411e45fe-36fd-489a-9b6a-53e0d2232907" />
+<img width="759" height="729" alt="Screenshot 2026-01-14 010620" src="https://github.com/user-attachments/assets/471fd876-4217-4878-9a2c-976fcca16423" />
 For questions or help, open an issue in the repository.
+
 
