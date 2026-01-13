@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLT GEAR ONE | Subwoofer Testing Interface</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <div class="splash-content">
+            <div class="logo-container">
+                <div class="logo">
+                    <span class="logo-text">SLT</span>
+                    <span class="gear-text">GEAR ONE</span>
+                </div>
+                <div class="tagline">ADVANCED AUDIO DIAGNOSTICS</div>
+            </div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <div class="loading-text">INITIALIZING SYSTEM...</div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="hidden">
+        <header>
+            <div class="logo-small">
+                <span class="logo-text">SLT</span>
+                <span class="gear-text">GEAR ONE</span>
+            </div>
+            <div class="header-controls">
+                <div class="status-indicator online">
+                    <span class="status-dot"></span>
+                    <span class="status-text">SYSTEM ONLINE</span>
+                </div>
+                <button id="settings-btn" class="icon-btn"><i class="fas fa-cog"></i></button>
+            </div>
+        </header>
+
+        <main>
+            <section class="control-panel">
+                <div class="panel-header">TEST CONTROLS</div>
+                <div class="control-group">
+                    <label for="frequency-range">Frequency Range (Hz)</label>
+                    <div class="range-control">
+                        <input type="number" id="frequency-min" min="20" max="200" value="20" class="number-input">
+                        <span class="range-separator">-</span>
+                        <input type="number" id="frequency-max" min="20" max="200" value="120" class="number-input">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="amplitude">Amplitude (dB)</label>
+                    <div class="slider-container">
+                        <input type="range" id="amplitude" min="-20" max="6" value="-3" class="slider">
+                        <div class="slider-value"><span id="amplitude-value">-3</span> dB</div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="test-type">Test Type</label>
+                    <div class="select-wrapper">
+                        <select id="test-type" class="select-input">
+                            <option value="sweep">Frequency Sweep</option>
+                            <option value="sine">Sine Wave</option>
+                            <option value="noise">Pink Noise</option>
+                            <option value="pulse">Pulse Response</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="duration">Test Duration (sec)</label>
+                    <input type="number" id="duration" min="5" max="60" value="10" class="number-input full-width">
+                </div>
+                
+                <div class="button-group">
+                    <button id="start-test" class="primary-btn">START TEST</button>
+                    <button id="stop-test" class="danger-btn" disabled>STOP</button>
+                    <button id="save-results" class="secondary-btn" disabled>SAVE RESULTS</button>
+                </div>
+            </section>
+            
+            <section class="visualization-panel">
+                <div class="panel-header">REAL-TIME ANALYSIS</div>
+                <div class="visualization-tabs">
+                    <button class="tab-btn active" data-tab="frequency">FREQUENCY RESPONSE</button>
+                    <button class="tab-btn" data-tab="waveform">WAVEFORM</button>
+                    <button class="tab-btn" data-tab="spectrogram">SPECTROGRAM</button>
+                </div>
+                
+                <div class="visualization-content">
+                    <div id="frequency-graph" class="graph-container active-graph">
+                        <canvas id="frequency-canvas"></canvas>
+                        <div class="axis x-axis">
+                            <span>20Hz</span>
+                            <span>50Hz</span>
+                            <span>100Hz</span>
+                            <span>150Hz</span>
+                            <span>200Hz</span>
+                        </div>
+                        <div class="axis y-axis">
+                            <span>+6dB</span>
+                            <span>0dB</span>
+                            <span>-6dB</span>
+                            <span>-12dB</span>
+                            <span>-18dB</span>
+                        </div>
+                    </div>
+                    
+                    <div id="waveform-graph" class="graph-container">
+                        <canvas id="waveform-canvas"></canvas>
+                    </div>
+                    
+                    <div id="spectrogram-graph" class="graph-container">
+                        <canvas id="spectrogram-canvas"></canvas>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="metrics-panel">
+                <div class="panel-header">PERFORMANCE METRICS</div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-name">PEAK SPL</div>
+                        <div class="metric-value" id="peak-spl">0.0 dB</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-name">RESONANT FREQ</div>
+                        <div class="metric-value" id="resonant-freq">0 Hz</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-name">POWER</div>
+                        <div class="metric-value" id="power-reading">0 W</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-name">DISTORTION</div>
+                        <div class="metric-value" id="distortion">0.0 %</div>
+                    </div>
+                </div>
+                
+                <div class="results-summary">
+                    <div class="summary-header">ANALYSIS SUMMARY</div>
+                    <div id="analysis-results" class="summary-content">
+                        <p>No test results available. Start a test to generate analysis.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <div id="settings-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>System Settings</h2>
+                    <button class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-group">
+                        <h3>Audio Configuration</h3>
+                        <div class="setting-item">
+                            <label for="input-device">Input Device</label>
+                            <select id="input-device" class="select-input"></select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="output-device">Output Device</label>
+                            <select id="output-device" class="select-input"></select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="sample-rate">Sample Rate</label>
+                            <select id="sample-rate" class="select-input">
+                                <option value="44100">44.1 kHz</option>
+                                <option value="48000" selected>48 kHz</option>
+                                <option value="96000">96 kHz</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h3>Display Settings</h3>
+                        <div class="setting-item">
+                            <label for="refresh-rate">Graph Refresh Rate</label>
+                            <select id="refresh-rate" class="select-input">
+                                <option value="15">15 fps</option>
+                                <option value="30" selected>30 fps</option>
+                                <option value="60">60 fps</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="theme">Theme Variant</label>
+                            <select id="theme" class="select-input">
+                                <option value="dark" selected>Dark (Default)</option>
+                                <option value="darker">Ultra Dark</option>
+                                <option value="blue">Dark Blue</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="save-settings" class="primary-btn">Save Settings</button>
+                    <button id="cancel-settings" class="secondary-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 

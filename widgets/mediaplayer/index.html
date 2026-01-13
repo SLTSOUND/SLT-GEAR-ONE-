@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SLT GEAR ONE Media Player</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg: #0e0f12;
+    --panel: #15171c;
+    --text: #e6e6e6;
+    --muted: #9aa0a6;
+    --grid: #23252b;
+    --accent: #4cc9f0;
+    --warn: #ffab00;
+    --hot: #d50000;
+    --good: #00c853;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+  }
+  header {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.08));
+    backdrop-filter: blur(6px) saturate(120%);
+  }
+  header, footer {
+    background: var(--panel);
+    padding: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    border-bottom: 1px solid var(--grid);
+  }
+  footer { border-top: 1px solid var(--grid); }
+  main {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    padding: 8px;
+    min-height: 0; /* allow children to shrink */
+    align-items: stretch;
+  }
+  .panel {
+    background: linear-gradient(180deg,#16181b 0%, #121315 100%);
+    border: 1px solid rgba(255,255,255,0.03);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0; /* allow canvases to fit */
+    flex: 1 1 50%;
+  }
+  .panel h3 {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .stack {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+    min-height: 0;
+  }
+  .vu-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    min-height: 0;
+  }
+  canvas {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg,#070709 0%, #0b0c10 100%);
+    border-radius: 8px;
+    display: block;
+    box-shadow: inset 0 -6px 18px rgba(0,0,0,0.6);
+  }
+  .playlist {
+    flex: 0 0 auto;
+    max-height: 26vh;
+    overflow-y: auto;
+    border-radius: 8px;
+    padding: 8px;
+    background: linear-gradient(180deg,#07080a,#0b0c10);
+  }
+  .playlist-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .playlist-item .title { color: var(--text); font-weight:500; }
+  .playlist-item .muted { color: var(--muted); font-size:12px }
+  .playlist-item:hover { background: #23252b; }
+  .playlist-controls { display: flex; gap: 6px; }
+  .eq-sliders {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+  }
+  .eq-band {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: calc(100% / 8 - 4px);
+  }
+  .eq-band label { color: var(--muted); font-size: 12px; }
+  .eq-band input[type="range"] {
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+    height: 100%;
+    min-height: 140px;
+    max-height: 28vh;
+    background: transparent;
+  }
+  .eq-band output { font-size: 12px; color: var(--muted); min-height: 16px; }
+  button, select, input[type="file"] {
+    background: linear-gradient(180deg,#20242a,#16181b);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.03);
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button:hover:not(:disabled){ transform: translateY(-1px); }
+  label.gain { display: flex; align-items: center; gap: 6px; }
+  label.gain input[type="range"] { width: 160px; }
+  label.gain output { min-width: 64px; text-align: right; color: var(--muted); }
+
+  /* Splitter between panels */
+  #splitter{
+    width: 10px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));
+    border-radius: 6px;
+    cursor: col-resize;
+    flex: 0 0 10px;
+    align-self: stretch;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+  }
+
+  @media (max-width: 900px) {
+    main { flex-direction: column; }
+    #splitter{ width:100%; height:10px; cursor:row-resize; flex:0 0 10px }
+  }
+</style>
+</head>
+<body>
+<header>
+  <strong>SLT GEAR ONE — Player</strong>
+  <button id="initAudio">Init</button>
+  <select id="inputSelect" disabled></select>
+  <button id="useDevice" disabled>Use</button>
+  <button id="useLineIn" disabled>Use Line-In</button>
+  <input type="file" id="fileInput" accept="audio/*"/>
+  <button id="playBtn" disabled>Play</button>
+  <button id="stopBtn" disabled>Stop</button>
+  <div id="nowPlaying" style="margin-left:8px; display:flex; align-items:center; gap:8px;">
+    <div style="min-width:220px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
+      <div style="font-size:13px; color:var(--muted)">Now Playing</div>
+      <div id="nowTitle" style="font-weight:600; color:var(--text); font-size:13px;">—</div>
+    </div>
+    <div id="progressWrap" style="flex:1; display:flex; align-items:center; gap:8px;">
+      <div id="timeCur" class="muted" style="font-size:12px; min-width:46px; text-align:left;">0:00</div>
+      <div id="progressBar" style="flex:1; height:8px; background:rgba(255,255,255,0.03); border-radius:6px; cursor:pointer; position:relative;">
+        <div id="progressFill" style="width:0%; height:100%; background:linear-gradient(90deg,var(--accent),#8be9ff); border-radius:6px"></div>
+      </div>
+      <div id="timeDur" class="muted" style="font-size:12px; min-width:46px; text-align:right;">0:00</div>
+    </div>
+  </div>
+  <label class="gain">
+    Gain
+    <input type="range" id="outputGain" min="-24" max="12" step="0.5" value="0"/>
+    <output id="outputGainVal">0 dB</output>
+  </label>
+</header>
+
+<main>
+  <!-- Left column: Spectrum + VU -->
+  <div id="leftPanel" class="panel">
+    <div class="stack" id="meterStack">
+      <canvas id="spectrum"></canvas>
+      <div class="vu-row" id="vuRow">
+        <canvas id="vuLeft"></canvas>
+        <canvas id="vuRight"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="splitter" title="Drag to resize"></div>
+
+  <!-- Right column: Playlist + EQ -->
+  <div id="rightPanel" class="panel">
+    <h3>Playlist</h3>
+    <div class="playlist" id="playlist"></div>
+    <div class="playlist-controls">
+      <input type="file" id="addFiles" accept="audio/*" multiple />
+      <button id="playAllBtn" disabled>Play All</button>
+      <button id="clearPlaylist">Clear</button>
+    </div>
+
+    <h3>Graphic EQ — 8 bands</h3>
+    <div id="eqSliders" class="eq-sliders"></div>
+    <div style="display:flex; gap:8px;">
+      <button id="eqBypass">Bypass</button>
+      <button id="eqReset">Reset</button>
+    </div>
+  </div>
+</main>
+
+<footer><small>Responsive one‑page layout — Web Audio, VU, Spectrum, Playlist, 8‑band EQ</small></footer>
+
+<script>
+/* ---------- Core audio state ---------- */
+let audioCtx, destination, outputGainNode, analyser, sourceNode=null, stream=null;
+let eqFilters=[], eqBypassed=false;
+
+/* ---------- UI refs ---------- */
+const initBtn=document.getElementById('initAudio');
+const inputSelect=document.getElementById('inputSelect');
+const useDeviceBtn=document.getElementById('useDevice');
+const useLineInBtn=document.getElementById('useLineIn');
+const fileInput=document.getElementById('fileInput');
+const playBtn=document.getElementById('playBtn');
+const stopBtn=document.getElementById('stopBtn');
+const outputGain=document.getElementById('outputGain');
+const outputGainVal=document.getElementById('outputGainVal');
+const eqSliders=document.getElementById('eqSliders');
+const eqBypassBtn=document.getElementById('eqBypass');
+const eqResetBtn=document.getElementById('eqReset');
+const playAllBtn=document.getElementById('playAllBtn');
+
+const spectrumCanvas=document.getElementById('spectrum');
+const vuLeft=document.getElementById('vuLeft');
+const vuRight=document.getElementById('vuRight');
+const specCtx=spectrumCanvas.getContext('2d');
+const vuLctx=vuLeft.getContext('2d');
+const vuRctx=vuRight.getContext('2d');
+const nowTitle = document.getElementById('nowTitle');
+const progressBar = document.getElementById('progressBar');
+const progressFill = document.getElementById('progressFill');
+const timeCur = document.getElementById('timeCur');
+const timeDur = document.getElementById('timeDur');
+const mainEl = document.querySelector('main');
+const leftPanel = document.getElementById('leftPanel');
+const rightPanel = document.getElementById('rightPanel');
+const splitter = document.getElementById('splitter');
+
+/* ---------- Media element for file playback ---------- */
+const mediaEl=new Audio();
+mediaEl.crossOrigin='anonymous';
+mediaEl.preload='auto';
+mediaEl.loop=false;
+
+/* ---------- Playlist ---------- */
+const playlistEl=document.getElementById('playlist');
+const addFilesInput=document.getElementById('addFiles');
+const clearPlaylistBtn=document.getElementById('clearPlaylist');
+let playlist=[]; // {name, url, blobUrl?, isLocal}
+let inputDevices = [];
+let playAllIndex = -1;
+
+/* Demo tracks to start */
+const demoTracks=[
+  {name:'Demo — SoundHelix 1', url:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', isLocal:false},
+  {name:'Demo — SoundHelix 2', url:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', isLocal:false},
+  {name:'Demo — SoundHelix 3', url:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', isLocal:false}
+];
+playlist = demoTracks.slice();
+renderPlaylist();
+
+addFilesInput.addEventListener('change', ()=>{
+  const files = Array.from(addFilesInput.files || []);
+  files.forEach(f=>{
+    const blobUrl = URL.createObjectURL(f);
+    playlist.push({ name: f.name, url: blobUrl, blobUrl, isLocal: true });
+  });
+  renderPlaylist();
+});
+
+clearPlaylistBtn.addEventListener('click', ()=>{
+  // Revoke local blob URLs
+  playlist.forEach(item=>{ if(item.isLocal && item.blobUrl) URL.revokeObjectURL(item.blobUrl); });
+  playlist = [];
+  renderPlaylist();
+});
+
+
+playAllBtn.addEventListener('click', ()=>{
+  if(playlist.length===0) return;
+  playAllIndex = 0;
+  playIndex(playAllIndex);
+});
+
+function playIndex(i){
+  if(i<0 || i>=playlist.length){ playAllIndex = -1; return; }
+  const item = playlist[i];
+  mediaEl.src = item.url;
+  mediaEl.play().catch(()=>{});
+  if(!sourceNode && audioCtx){
+    sourceNode = audioCtx.createMediaElementSource(mediaEl);
+    connectGraph();
+  }
+  mediaEl.onended = ()=>{
+    playAllIndex++;
+    if(playAllIndex < playlist.length) playIndex(playAllIndex);
+    else { playAllIndex = -1; mediaEl.onended = null; }
+  };
+}
+
+function renderPlaylist(){
+  playlistEl.innerHTML='';
+  playlist.forEach((item, idx)=>{
+    const row=document.createElement('div');
+    row.className='playlist-item';
+    const title=document.createElement('span');
+    title.textContent=item.name;
+
+    const controls=document.createElement('span');
+    controls.className='playlist-controls';
+    const playBtn=document.createElement('button');
+    playBtn.textContent='Play';
+    playBtn.addEventListener('click', ()=> loadAndPlay(item));
+    const removeBtn=document.createElement('button');
+    removeBtn.textContent='Remove';
+    removeBtn.addEventListener('click', ()=>{
+      if(item.isLocal && item.blobUrl) URL.revokeObjectURL(item.blobUrl);
+      playlist.splice(idx,1);
+      renderPlaylist();
+    });
+
+    controls.appendChild(playBtn);
+    controls.appendChild(removeBtn);
+    row.appendChild(title);
+    row.appendChild(controls);
+    playlistEl.appendChild(row);
+  });
+  // update Play All enable
+  if(playAllBtn) playAllBtn.disabled = playlist.length===0;
+}
+
+async function loadAndPlay(item){
+  mediaEl.src = item.url;
+  nowTitle.textContent = item.name || item.url || '—';
+  await mediaEl.play().catch(()=>{});
+  if(!sourceNode && audioCtx){
+    sourceNode = audioCtx.createMediaElementSource(mediaEl);
+    connectGraph();
+  }
+}
+
+/* ---------- EQ bands ---------- */
+const eqBands=[
+  {label:'31 Hz',  freq:31,   gain:0, Q:1.0, type:'lowshelf'},
+  {label:'62 Hz',  freq:62,   gain:0, Q:1.0, type:'peaking'},
+  {label:'125 Hz', freq:125,  gain:0, Q:1.0, type:'peaking'},
+  {label:'250 Hz', freq:250,  gain:0, Q:1.0, type:'peaking'},
+  {label:'500 Hz', freq:500,  gain:0, Q:1.0, type:'peaking'},
+  {label:'1 kHz',  freq:1000, gain:0, Q:1.0, type:'peaking'},
+  {label:'2 kHz',  freq:2000, gain:0, Q:1.0, type:'peaking'},
+  {label:'8 kHz',  freq:8000, gain:0, Q:0.9, type:'highshelf'}
+];
+
+/* ---------- Init audio graph ---------- */
+async function initAudio(){
+  if(audioCtx) return;
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  destination=audioCtx.destination;
+
+  outputGainNode=audioCtx.createGain();
+  outputGainNode.gain.value=dbToGain(0);
+
+  analyser=audioCtx.createAnalyser();
+  analyser.fftSize=2048;
+  analyser.smoothingTimeConstant=0.85;
+
+  eqFilters=eqBands.map(b=>{
+    const f=audioCtx.createBiquadFilter();
+    f.type=b.type; f.frequency.value=b.freq; f.gain.value=b.gain; f.Q.value=b.Q;
+    return f;
+  });
+
+  connectGraph();
+
+  // Prompt permission then enumerate devices
+  try {
+    await navigator.mediaDevices.getUserMedia({audio:true});
+    const devices=await navigator.mediaDevices.enumerateDevices();
+    inputDevices = devices.filter(d=>d.kind==='audioinput');
+    inputSelect.innerHTML = inputDevices.map(d=>`<option value="${d.deviceId}">${d.label||'Input'}</option>`).join('');
+    inputSelect.disabled = inputDevices.length===0;
+    useDeviceBtn.disabled = inputDevices.length===0;
+    // try to auto-detect a USB / Line-In style device by label
+    const usbMatch = inputDevices.find(d => /usb|line|microphone|external/i.test(d.label));
+    if(usbMatch){
+      useLineInBtn.disabled = false;
+      useLineInBtn.dataset.deviceId = usbMatch.deviceId;
+    } else {
+      useLineInBtn.disabled = inputDevices.length===0;
+      delete useLineInBtn.dataset.deviceId;
+    }
+  } catch(e) {
+    console.warn('Device permission or enumeration failed:', e);
+  }
+
+  playBtn.disabled=false;
+  stopBtn.disabled=false;
+
+  buildEqUI();
+  resizeCanvases();
+  render();
+}
+
+/* ---------- Connect graph ---------- */
+function connectGraph(){
+  [analyser, outputGainNode, ...eqFilters].forEach(n=>{ try{ n.disconnect(); }catch(e){} });
+
+  const head = eqBypassed ? null : chain(eqFilters);
+
+  if(sourceNode){
+    sourceNode.disconnect();
+    if(head) sourceNode.connect(head);
+    else sourceNode.connect(analyser);
+  }
+  if(head) head.connect(analyser);
+  analyser.connect(outputGainNode);
+  outputGainNode.connect(destination);
+}
+
+function chain(nodes){
+  if(!nodes || nodes.length===0) return null;
+  for(let i=0;i<nodes.length-1;i++){
+    try{ nodes[i].connect(nodes[i+1]); }catch(e){}
+  }
+  return nodes[0];
+}
+
+/* ---------- Device selection ---------- */
+async function useSelectedDevice(){
+  const deviceId=inputSelect.value;
+  if(!deviceId || !audioCtx) return;
+
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+
+  stream=await navigator.mediaDevices.getUserMedia({
+    audio:{
+      deviceId:{ exact: deviceId },
+      channelCount:2,
+      echoCancellation:false,
+      noiseSuppression:false,
+      autoGainControl:false
+    }
+  });
+
+  sourceNode=audioCtx.createMediaStreamSource(stream);
+  connectGraph();
+}
+
+async function useDeviceById(deviceId){
+  if(!deviceId || !audioCtx) return;
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        deviceId: { exact: deviceId },
+        channelCount: 2,
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false
+      }
+    });
+    sourceNode = audioCtx.createMediaStreamSource(stream);
+    connectGraph();
+  }catch(err){
+    console.warn('Could not open device', err);
+  }
+}
+
+/* ---------- File playback (single file quick load) ---------- */
+fileInput.addEventListener('change', async (e)=>{
+  const file=e.target.files?.[0];
+  if(!file) return;
+  const blobUrl=URL.createObjectURL(file);
+  // Add to playlist and auto play
+  const item={ name:file.name, url:blobUrl, blobUrl, isLocal:true };
+  playlist.push(item);
+  renderPlaylist();
+  await loadAndPlay(item);
+});
+
+useLineInBtn.addEventListener('click', ()=>{
+  const id = useLineInBtn.dataset.deviceId || inputSelect.value;
+  if(id) useDeviceById(id);
+});
+
+/* ---------- Transport ---------- */
+playBtn.addEventListener('click', async ()=>{
+  if(!audioCtx) return;
+  if(audioCtx.state==='suspended') await audioCtx.resume();
+  try{
+    if(mediaEl.paused) { await mediaEl.play(); playBtn.textContent='Pause'; }
+    else { mediaEl.pause(); playBtn.textContent='Play'; }
+  }catch(e){ console.warn(e); }
+});
+
+stopBtn.addEventListener('click', ()=>{
+  if(mediaEl.src){ mediaEl.pause(); mediaEl.currentTime=0; }
+});
+
+// update time/progress
+mediaEl.addEventListener('timeupdate', ()=>{
+  const cur = mediaEl.currentTime || 0;
+  const dur = mediaEl.duration || 0;
+  if(isFinite(cur) && isFinite(dur) && dur>0){
+    const pct = Math.max(0, Math.min(1, cur/dur))*100;
+    progressFill.style.width = pct + '%';
+    timeCur.textContent = formatTime(cur);
+    timeDur.textContent = formatTime(dur);
+  }
+});
+mediaEl.addEventListener('loadedmetadata', ()=>{
+  timeDur.textContent = isFinite(mediaEl.duration) ? formatTime(mediaEl.duration) : '0:00';
+});
+mediaEl.addEventListener('play', ()=>{ playBtn.textContent='Pause'; });
+mediaEl.addEventListener('pause', ()=>{ playBtn.textContent='Play'; });
+
+progressBar.addEventListener('click', (e)=>{
+  const rect = progressBar.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const pct = Math.max(0, Math.min(1, x / rect.width));
+  if(isFinite(mediaEl.duration) && mediaEl.duration>0) mediaEl.currentTime = pct * mediaEl.duration;
+});
+
+function formatTime(t){
+  if(!isFinite(t) || t<=0) return '0:00';
+  const s = Math.floor(t%60).toString().padStart(2,'0');
+  const m = Math.floor(t/60);
+  return `${m}:${s}`;
+}
+
+/* ---------- Output gain ---------- */
+outputGain.addEventListener('input', ()=>{
+  const db=parseFloat(outputGain.value);
+  outputGainVal.textContent=`${db} dB`;
+  if(outputGainNode) outputGainNode.gain.value=dbToGain(db);
+});
+
+/* ---------- EQ UI ---------- */
+function buildEqUI(){
+  eqSliders.innerHTML='';
+  eqBands.forEach((band, idx)=>{
+    const wrap=document.createElement('div');
+    wrap.className='eq-band';
+
+    const label=document.createElement('label');
+    label.textContent=band.label;
+
+    const slider=document.createElement('input');
+    slider.type='range'; slider.min=-12; slider.max=12; slider.step=0.5; slider.value=band.gain;
+
+    const out=document.createElement('output');
+    out.textContent=`${band.gain} dB`;
+
+    slider.addEventListener('input', ()=>{
+      const val=parseFloat(slider.value);
+      out.textContent=`${val} dB`;
+      eqFilters[idx].gain.value=val;
+    });
+
+    wrap.append(label, slider, out);
+    eqSliders.appendChild(wrap);
+  });
+}
+
+eqBypassBtn.addEventListener('click', ()=>{
+  eqBypassed=!eqBypassed;
+  eqBypassBtn.textContent=eqBypassed?'Enable EQ':'Bypass';
+  connectGraph();
+});
+
+eqResetBtn.addEventListener('click', ()=>{
+  if(!eqFilters || eqFilters.length===0){
+    eqBands.forEach(b=>{ b.gain=0; });
+    buildEqUI();
+    return;
+  }
+  eqBands.forEach((b,i)=>{ b.gain=0; if(eqFilters[i]) eqFilters[i].gain.value=0; });
+  buildEqUI();
+});
+
+/* ---------- VU + Spectrum rendering ---------- */
+const vuCfg={ minDb:-60, maxDb:0, attack:0.85, release:0.2, curve:0.8 };
+let vuPeakL=-60, vuPeakR=-60, vuRmsL=-60, vuRmsR=-60;
+
+function render(){
+  requestAnimationFrame(render);
+  if(!analyser) return;
+
+  // Spectrum
+  const bins=new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(bins);
+  drawSpectrum(bins);
+
+  // VU (approximate stereo from time-domain)
+  const time=new Float32Array(analyser.fftSize);
+  analyser.getFloatTimeDomainData(time);
+  const { peak, rms } = stereoLevels(time);
+
+  vuPeakL = smooth(vuPeakL, peak.l, peak.l > vuPeakL ? vuCfg.attack : vuCfg.release);
+  vuPeakR = smooth(vuPeakR, peak.r, peak.r > vuPeakR ? vuCfg.attack : vuCfg.release);
+  vuRmsL  = smooth(vuRmsL,  rms.l,  rms.l  > vuRmsL  ? vuCfg.attack : vuCfg.release);
+  vuRmsR  = smooth(vuRmsR,  rms.r,  rms.r  > vuRmsR  ? vuCfg.attack : vuCfg.release);
+
+  drawVU(vuLctx, vuLeft, vuRmsL, vuPeakL);
+  drawVU(vuRctx, vuRight, vuRmsR, vuPeakR);
+}
+
+function drawSpectrum(bins){
+  const w=spectrumCanvas.width, h=spectrumCanvas.height;
+  specCtx.clearRect(0,0,w,h);
+  const barW=Math.max(2, Math.floor(w / bins.length));
+  for(let i=0;i<bins.length;i++){
+    const v=bins[i]/255;
+    const barH=v*h;
+    const x=i*barW, y=h-barH;
+    const color = v>0.8 ? '#d50000' : v>0.6 ? '#ffab00' : '#4cc9f0';
+    specCtx.fillStyle=color;
+    specCtx.fillRect(x,y,barW-1,barH);
+  }
+}
+
+function drawVU(ctx, canvas, rmsDb, peakDb){
+  const w=canvas.width, h=canvas.height;
+  ctx.clearRect(0,0,w,h);
+
+  const rmsY=mapDbToY(rmsDb,h);
+  const peakY=mapDbToY(peakDb,h);
+
+  // Background grid
+  ctx.fillStyle='#121317';
+  ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#23252b';
+  ctx.lineWidth=1;
+  for(let d=-60; d<=0; d+=6){
+    const y=mapDbToY(d,h);
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+    ctx.fillStyle='#9aa0a6'; ctx.font='10px Segoe UI';
+    ctx.fillText(`${d} dB`, 4, y-2);
+  }
+
+  // RMS bar
+  ctx.fillStyle='#4cc9f0';
+  ctx.fillRect(20, rmsY, w-40, h-rmsY);
+
+  // Peak marker
+  ctx.fillStyle = peakDb>-3 ? '#d50000' : peakDb>-12 ? '#ffab00' : '#00c853';
+  ctx.fillRect(20, peakY-2, w-40, 4);
+}
+
+function mapDbToY(db, h){
+  if(!isFinite(db)) return h;
+  if(vuCfg.maxDb === vuCfg.minDb) return h;
+  const clamped = Math.max(vuCfg.minDb, Math.min(vuCfg.maxDb, db));
+  const denom = (vuCfg.maxDb - vuCfg.minDb) || 1;
+  let norm = (clamped - vuCfg.minDb) / denom;
+  // apply gentle non-linear curve to emphasize higher levels (curve < 1 -> more top-end)
+  if(isFinite(vuCfg.curve) && vuCfg.curve > 0 && vuCfg.curve !== 1){
+    const c = Number(vuCfg.curve);
+    // clamp norm before pow to avoid NaN
+    norm = Math.max(0, Math.min(1, Math.pow(norm, c)));
+  }
+  return h - norm * h;
+}
+
+function stereoLevels(time){
+  const len=time.length;
+  let peakL=0, peakR=0, sumSqL=0, sumSqR=0, count=0;
+  for(let i=0;i<len;i+=2){
+    const l=time[i];
+    const r=time[i+1] ?? time[i];
+    peakL=Math.max(peakL, Math.abs(l));
+    peakR=Math.max(peakR, Math.abs(r));
+    sumSqL+=l*l; sumSqR+=r*r; count++;
+  }
+  const rmsL = count>0 ? Math.sqrt(sumSqL/count) : 0;
+  const rmsR = count>0 ? Math.sqrt(sumSqR/count) : 0;
+  return {
+    peak:{ l: ampToDb(peakL), r: ampToDb(peakR) },
+    rms: { l: ampToDb(rmsL),  r: ampToDb(rmsR)  }
+  };
+}
+
+function smooth(prev, next, coeff){
+  coeff = Number(coeff);
+  if(!isFinite(coeff)) coeff = 0.2;
+  coeff = Math.max(0, Math.min(1, coeff));
+  if(!isFinite(prev)) prev = next;
+  return prev + coeff * (next - prev);
+}
+
+/* ---------- Utils ---------- */
+function dbToGain(db){ return Math.pow(10, db/20); }
+function ampToDb(a){ return 20*Math.log10(Math.max(a, 1e-8)); }
+
+/* ---------- Canvas resizing ---------- */
+function resizeCanvases(){
+  const ratio = Math.max(1, window.devicePixelRatio || 1);
+  [
+    {c: spectrumCanvas, ctx: specCtx},
+    {c: vuLeft, ctx: vuLctx},
+    {c: vuRight, ctx: vuRctx}
+  ].forEach(({c, ctx})=>{
+    const rect = c.getBoundingClientRect();
+    const cssW = Math.max(1, Math.floor(rect.width));
+    const cssH = Math.max(1, Math.floor(rect.height));
+    c.style.width = cssW + 'px';
+    c.style.height = cssH + 'px';
+    c.width = Math.max(1, Math.floor(cssW * ratio));
+    c.height = Math.max(1, Math.floor(cssH * ratio));
+    if(ctx && typeof ctx.setTransform === 'function'){
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(ratio, ratio);
+    }
+  });
+}
+window.addEventListener('resize', resizeCanvases);
+
+/* ---------- Wire UI ---------- */
+initBtn.addEventListener('click', async ()=>{
+  await initAudio();
+});
+useDeviceBtn.addEventListener('click', useSelectedDevice);
+// Splitter drag to resize panels (pointer events)
+if(splitter && mainEl && leftPanel && rightPanel){
+  let dragging = false;
+  splitter.addEventListener('pointerdown', (ev)=>{
+    dragging = true;
+    splitter.setPointerCapture(ev.pointerId);
+    document.body.style.userSelect = 'none';
+  });
+  window.addEventListener('pointermove', (ev)=>{
+    if(!dragging) return;
+    const rect = mainEl.getBoundingClientRect();
+    if(rect.width === 0) return;
+    let x = ev.clientX - rect.left;
+    const min = 180; const max = rect.width - 180;
+    if(window.innerWidth <= 900){
+      // vertical resize on small screens
+      let y = ev.clientY - rect.top;
+      const minH = 120; const maxH = rect.height - 120;
+      y = Math.max(minH, Math.min(maxH, y));
+      leftPanel.style.flex = `0 0 ${y}px`;
+    } else {
+      x = Math.max(min, Math.min(max, x));
+      leftPanel.style.flex = `0 0 ${x}px`;
+    }
+    resizeCanvases();
+  });
+  window.addEventListener('pointerup', (ev)=>{
+    if(!dragging) return;
+    dragging = false;
+    try{ splitter.releasePointerCapture(ev.pointerId); }catch(e){}
+    document.body.style.userSelect = '';
+  });
+  // double-click splitter to reset
+  splitter.addEventListener('dblclick', ()=>{
+    leftPanel.style.flex = '';
+    resizeCanvases();
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+/* Fade In Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Slide Up Animation */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-up {
+    animation: slideUp 0.6s ease-out;
+}
+
+/* Loading Bar Animation */
+@keyframes loadingProgress {
+    0% {
+        width: 0%;
+    }
+    50% {
+        width: 70%;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
+.progress {
+    animation: loadingProgress 3s ease-in-out forwards;
+}
+
+/* Audio Wave Animation */
+@keyframes audioWave {
+    0%, 100% {
+        height: 100%;
+    }
+    50% {
+        height: 40%;
+    }
+}
+
+.audio-wave span:nth-child(1) {
+    animation: audioWave 0.6s ease-in-out infinite;
+}
+
+.audio-wave span:nth-child(2) {
+    animation: audioWave 0.6s ease-in-out infinite 0.1s;
+}
+
+.audio-wave span:nth-child(3) {
+    animation: audioWave 0.6s ease-in-out infinite 0.2s;
+}
+
+.audio-wave span:nth-child(4) {
+    animation: audioWave 0.6s ease-in-out infinite 0.1s;
+}
+
+.audio-wave span:nth-child(5) {
+    animation: audioWave 0.6s ease-in-out infinite 0s;
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Smooth Transition */
+@keyframes smoothTransition {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.smooth-transition {
+    animation: smoothTransition 0.8s ease-in-out;
+}
+
+/* Glow Animation */
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 15px var(--primary-color-glow);
+    }
+    50% {
+        box-shadow: 0 0 25px var(--primary-color-glow);
+    }
+}
+
+/* Window Pop In */
+@keyframes windowPopIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.window {
+    animation: windowPopIn 0.3s ease-out;
+}
+
+/* Button Hover Glow */
+@keyframes buttonHoverGlow {
+    0% {
+        box-shadow: 0 0 5px var(--primary-color-glow);
+    }
+    50% {
+        box-shadow: 0 0 20px var(--primary-color-glow);
+    }
+    100% {
+        box-shadow: 0 0 5px var(--primary-color-glow);
+    }
+}
+
+.btn:hover {
+    animation: buttonHoverGlow 1s ease-in-out infinite;
+}
+
+/* Modal Fade In */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal.active {
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+/* Minimize Animation */
+@keyframes minimizeToBar {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-100px, 100px) scale(0.1);
+    }
+}
+
+.window.minimizing {
+    animation: minimizeToBar 0.4s ease-in forwards;
+}

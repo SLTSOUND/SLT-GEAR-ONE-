@@ -1,6 +1,3 @@
-# SLT-GEAR-ONE-
-HIGH END AUDIO WORK STATION 
-
 # SLT GEAR ONE
 
 SLT GEAR ONE is a web-based control interface for the SLT GEAR ONE audio hardware and software ecosystem. It provides a compact, responsive dashboard of widgets for mixing, monitoring, effects, recording, and device configuration.

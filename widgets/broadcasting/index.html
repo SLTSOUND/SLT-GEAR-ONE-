@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLT GEAR ONE Broadcasting Server</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0a0d14;
+            --secondary-color: #151921;
+            --accent-color: #00c4ff;
+            --accent-color-dark: #0099ff;
+            --text-color: #ffffff;
+            --text-muted: #8b95a8;
+            --border-radius: 12px;
+            --gradient: linear-gradient(135deg, var(--accent-color), var(--accent-color-dark));
+            --glass-bg: rgba(21, 25, 33, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 30px;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 196, 255, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 153, 255, 0.05) 0%, transparent 20%),
+                linear-gradient(45deg, rgba(0, 196, 255, 0.02) 0%, transparent 50%);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" fill="rgba(255,255,255,0.02)"/></svg>');
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient);
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--glass-border);
+        }
+
+        h1 {
+            color: var(--text-color);
+            font-size: 3.2em;
+            margin-bottom: 15px;
+            letter-spacing: -0.5px;
+            text-shadow: 0 0 20px rgba(0, 196, 255, 0.2);
+            position: relative;
+            display: inline-block;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: var(--gradient);
+            border-radius: 2px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .window {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            height: 650px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .window::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .window:hover::before {
+            transform: translateX(100%);
+        }
+
+        .window:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 196, 255, 0.1);
+        }
+
+        .window-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .window-title {
+            color: var(--text-color);
+            font-size: 1.3em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: rgba(0, 196, 255, 0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 196, 255, 0.2);
+        }
+
+        .window-title i {
+            color: var(--accent-color);
+            font-size: 1.1em;
+        }
+
+        .stats-container {
+            height: calc(100% - 60px);
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+        }
+
+        .stat-item:hover::before {
+            opacity: 1;
+        }
+
+        .stat-item span:first-child {
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-item span:last-child {
+            font-weight: 500;
+            color: var(--text-color);
+            background: rgba(0, 196, 255, 0.1);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            border: 1px solid rgba(0, 196, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover span:last-child {
+            background: rgba(0, 196, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .stream-container {
+            height: calc(100% - 60px);
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .stream-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        .button {
+            padding: 16px 32px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            color: var(--text-color);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            font-size: 1.1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+
+        .button i {
+            color: var(--accent-color);
+            position: relative;
+            z-index: 1;
+        }
+
+        .button span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 196, 255, 0.15);
+            border-color: var(--accent-color);
+        }
+
+        .button:hover::before {
+            opacity: 0.1;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 3px;
+        }
+
+        /* Status Indicators */
+        .status-online {
+            color: #00ff8c !important;
+            text-shadow: 0 0 10px rgba(0, 255, 140, 0.3);
+        }
+
+        .status-offline {
+            color: #ff4757 !important;
+            text-shadow: 0 0 10px rgba(255, 71, 87, 0.3);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: rgba(255, 71, 87, 0.1);
+            border-radius: 20px;
+            font-size: 0.8em;
+            color: #ff4757;
+            animation: pulse 2s infinite;
+            border: 1px solid rgba(255, 71, 87, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .live-indicator i {
+            font-size: 0.8em;
+        }
+
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--text-color);
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8em;
+            white-space: nowrap;
+            border: 1px solid var(--glass-border);
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Loading Animation */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .loading {
+            background: linear-gradient(90deg, 
+                rgba(255,255,255,0.05) 25%, 
+                rgba(255,255,255,0.1) 50%, 
+                rgba(255,255,255,0.05) 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SLT GEAR ONE</h1>
+            <p>Professional Broadcasting Control Center</p>
+        </header>
+
+        <div class="main-content">
+            <div class="window">
+                <div class="window-header">
+                    <span class="window-title">
+                        <i class="fas fa-chart-line"></i>
+                        Server & Stream Statistics
+                    </span>
+                    <span class="live-indicator">
+                        <i class="fas fa-circle"></i> LIVE
+                    </span>
+                </div>
+                <div class="stats-container" id="statsContainer">
+                    <!-- Stats will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="window">
+                <div class="window-header">
+                    <span class="window-title">
+                        <i class="fas fa-video"></i>
+                        Live Stream Preview
+                    </span>
+                </div>
+                <div class="stream-container">
+                    <iframe src="https://server.sltstream.co.za/?view=ascM4XM&bitrate=20000&codec=vp9&stereo&label=SLT_STREAM_SERVER_099" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="https://server.sltstream.co.za/?push=ascM4XM&view=ascM4XM_hostlink&stereo&quality=0&bitrate=1200&label=SLT_STREAM_SERVER_099" target="_blank" class="button">
+                <i class="fas fa-cogs"></i>
+                <span>Server Configuration</span>
+            </a>
+            <a href="https://server.sltstream.co.za/?view=ascM4XM&bitrate=20000&codec=vp9&stereo&label=SLT_STREAM_SERVER_099" target="_blank" class="button">
+                <i class="fas fa-link"></i>
+                <span>Stream Link</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const stats = [
+            { label: 'Stream Status', value: 'Online', isStatus: true, icon: 'fa-signal' },
+            { label: 'Bitrate', value: '20000 kbps', icon: 'fa-tachometer-alt' },
+            { label: 'Codec', value: 'VP9', icon: 'fa-code' },
+            { label: 'Audio', value: 'Stereo', icon: 'fa-volume-up' },
+            { label: 'Uptime', value: '00:00:00', icon: 'fa-clock' },
+            { label: 'Active Viewers', value: '0', icon: 'fa-users' },
+            { label: 'CPU Usage', value: '0%', icon: 'fa-microchip' },
+            { label: 'Memory Usage', value: '0%', icon: 'fa-memory' },
+            { label: 'Network Speed', value: '0 Mbps', icon: 'fa-network-wired' }
+        ];
+
+        function updateStats() {
+            const statsContainer = document.getElementById('statsContainer');
+            statsContainer.innerHTML = '';
+            
+            stats.forEach(stat => {
+                const statItem = document.createElement('div');
+                statItem.className = 'stat-item';
+                const value = stat.isStatus ? 
+                    `<span class="status-${stat.value.toLowerCase()}">${stat.value}</span>` :
+                    `<span>${stat.value}</span>`;
+                statItem.innerHTML = `
+                    <span><i class="fas ${stat.icon}"></i> ${stat.label}</span>
+                    ${value}
+                `;
+                statsContainer.appendChild(statItem);
+            });
+        }
+
+        // Initial update with loading state
+        updateStats();
+        
+        // Simulate loading state
+        setTimeout(() => {
+            document.querySelectorAll('.stat-item').forEach(item => {
+                item.classList.remove('loading');
+            });
+        }, 1500);
+
+        // Regular updates
+        setInterval(updateStats, 5000);
+
+        let seconds = 0;
+        setInterval(() => {
+            seconds++;
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            stats[4].value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            updateStats();
+        }, 1000);
+
+        // Add hover effect to buttons
+        document.querySelectorAll('.button').forEach(button => {
+            button.addEventListener('mouseover', () => {
+                button.style.transform = 'translateY(-2px)';
+            });
+            button.addEventListener('mouseout', () => {
+                button.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html> 

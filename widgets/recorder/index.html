@@ -1,0 +1,805 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SLT GEAR ONE — Pro Recorder</title>
+  <style>
+    :root {
+      --bg: #0c0f13;
+      --panel: #131720;
+      --panel-2: #1a2130;
+      --text: #e6eef7;
+      --muted: #98a2b3;
+      --accent: #5cc8ff;
+      --accent-2: #8b5cff;
+      --danger: #ff5c7a;
+      --good: #57d99d;
+      --warn: #ffbe5c;
+      --border: #263044;
+      --button: #202739;
+      --button-hover: #2a3350;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+      height: 100%;
+      margin: 0;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "header header"
+        "left main"
+        "footer footer";
+      gap: 12px;
+      padding: 16px;
+      min-height: 100vh;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    header {
+      grid-area: header;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand .logo {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 2px #0007;
+    }
+    .brand .title { font-weight: 700; letter-spacing: 0.4px; }
+    .header-actions { display: flex; gap: 8px; }
+
+    .btn {
+      background: var(--button);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .05s ease;
+    }
+    .btn:hover { background: var(--button-hover); border-color: #33415c; }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: linear-gradient(180deg, #2a3755, #1f2840); border-color: #3a4a70; }
+    .btn.accent { background: linear-gradient(180deg, #1b2c3f, #152235); border-color: #304a67; color: var(--accent); }
+    .btn.good { color: var(--good); }
+    .btn.danger { color: var(--danger); }
+    .btn.warn { color: var(--warn); }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .grow { flex: 1; }
+
+    .select, .input {
+      width: 100%;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      outline: none;
+    }
+    .section-title {
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin: 6px 0 10px;
+    }
+
+    .left { grid-area: left; display: grid; gap: 12px; align-content: start; }
+    .main { grid-area: main; display: grid; gap: 12px; grid-template-rows: auto auto 1fr; }
+    .footer { grid-area: footer; }
+
+    .meters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .meter {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .bar-wrap { display: flex; gap: 8px; align-items: center; }
+    .bar {
+      height: 16px; flex: 1;
+      background: #0b111a; border-radius: 6px; overflow: hidden;
+      border: 1px solid #1a2635;
+    }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, #39a3ff, #8b5cff); width: 0%; transition: width .08s linear; }
+    .bar-peak { position: relative; height: 2px; background: var(--danger); width: 0%; margin-top: 2px; transition: width .08s linear; }
+    .meter-label { width: 90px; color: var(--muted); font-size: 12px; }
+
+    .transport {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px; align-items: center;
+    }
+    .transport .big { padding: 10px 14px; border-radius: 12px; font-size: 14px; }
+    .time {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 24px; letter-spacing: 1px;
+      padding: 8px 12px; background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px; text-align: center;
+    }
+    .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+    .led { width: 10px; height: 10px; border-radius: 50%; background: #3a4a70; box-shadow: 0 0 0 2px #0a0f16 inset; }
+    .led.rec { background: var(--danger); box-shadow: 0 0 10px #ff5c7a88; }
+    .led.ready { background: var(--good); box-shadow: 0 0 8px #57d99d77; }
+
+    .wave {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      display: grid; gap: 8px;
+    }
+    /* Ensure canvases occupy space and are easy to observe */
+    canvas#spectrum, canvas#wave {
+      width: 100%;
+      display: block;
+      border-radius: 8px;
+    }
+    canvas#spectrum { height: 120px; background: #07101a; }
+    canvas#wave { height: 160px; background: #07101a; }
+
+    .list { display: grid; gap: 8px; max-height: 260px; overflow: auto; }
+    .item {
+      display: grid; grid-template-columns: auto 1fr auto;
+      gap: 10px; align-items: center;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px;
+    }
+    .item .meta { font-size: 12px; color: var(--muted); }
+
+    .switch {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 6px 10px;
+      cursor: pointer;
+    }
+    .switch input { accent-color: var(--accent); }
+    .hint { color: var(--muted); font-size: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .kbd {
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      background: #0b111a;
+      border: 1px solid #192334;
+      border-radius: 6px;
+      padding: 2px 6px;
+      color: var(--muted);
+    }
+    .danger-zone {
+      border: 1px dashed #3a2030;
+      background: #120b10;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main"
+          "left"
+          "footer";
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">SLT GEAR ONE — Recorder</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn accent" id="initBtn" title="Initialize audio and ask permission once">Initialize</button>
+        <button class="btn" id="resetBtn" title="Reset audio graph">Reset</button>
+        <button class="btn" id="downloadAllBtn" title="Download all takes">Download all</button>
+      </div>
+    </header>
+
+    <div class="left">
+      <div class="card">
+        <div class="section-title">Source selection</div>
+        <div class="row">
+          <select id="inputSelect" class="select"></select>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <label class="switch">
+            <input type="checkbox" id="monitorToggle" />
+            <span>Input monitoring</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="autoGainToggle" />
+            <span>Auto gain protect</span>
+          </label>
+        </div>
+        <div class="hint" style="margin-top:6px;">
+          Grant mic permission once via Initialize. Some browsers may require re-approval when switching devices.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Recording options</div>
+        <div class="grid-2">
+          <div>
+            <label>Container</label>
+            <select id="container" class="select">
+              <option value="audio/webm">WebM (Opus)</option>
+              <option value="audio/ogg">Ogg (Opus)</option>
+              <option value="audio/mp4">MP4 (if supported)</option>
+            </select>
+          </div>
+          <div>
+            <label>Bitrate</label>
+            <select id="bitrate" class="select">
+              <option value="128000">128 kbps</option>
+              <option value="192000">192 kbps</option>
+              <option value="256000">256 kbps</option>
+              <option value="320000">320 kbps</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2" style="margin-top:8px;">
+          <div>
+            <label>Pre-roll</label>
+            <select id="preRoll" class="select">
+              <option value="0">None</option>
+              <option value="1">1 s</option>
+              <option value="2">2 s</option>
+              <option value="3">3 s</option>
+            </select>
+          </div>
+          <div>
+            <label>Punch range</label>
+            <input id="punchIn" class="input" placeholder="Punch in mm:ss" />
+            <input id="punchOut" class="input" placeholder="Punch out mm:ss" style="margin-top:6px;" />
+            <div class="hint">Enter times like 00:10 and 00:25.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Takes</div>
+        <div class="list" id="takeList"></div>
+        <div class="row" style="margin-top:8px;">
+          <button class="btn" id="clearTakesBtn">Clear takes</button>
+          <div class="hint">Takes are kept in memory for this session.</div>
+        </div>
+      </div>
+
+      <div class="card danger-zone">
+        <div class="section-title">Safety</div>
+        <div class="hint">
+          Auto gain protect reduces monitor level if peaks exceed -3 dBFS. Recording level is unaffected; avoid clipping at the source.
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="card transport">
+        <div class="row">
+          <button class="btn big good" id="recordBtn"><span class="kbd">R</span> Record</button>
+          <button class="btn big warn" id="pauseBtn"><span class="kbd">P</span> Pause</button>
+          <button class="btn big" id="stopBtn"><span class="kbd">S</span> Stop</button>
+          <button class="btn big" id="markerBtn"><span class="kbd">M</span> Add marker</button>
+        </div>
+        <div class="time" id="clock">00:00:00.000</div>
+        <div class="status">
+          <div class="led" id="led"></div>
+          <div id="statusText">Idle</div>
+        </div>
+      </div>
+
+      <div class="card meters">
+        <div class="meter">
+          <div class="section-title">Peak and RMS</div>
+          <div class="bar-wrap">
+            <div class="meter-label">Peak</div>
+            <div class="bar"><div class="bar-fill" id="peakFill"></div></div>
+          </div>
+          <div class="bar-peak" id="peakHold"></div>
+          <div class="bar-wrap" style="margin-top:8px;">
+            <div class="meter-label">RMS</div>
+            <div class="bar"><div class="bar-fill" id="rmsFill"></div></div>
+          </div>
+        </div>
+        <div class="meter">
+          <div class="section-title">Spectrum</div>
+          <canvas id="spectrum"></canvas>
+        </div>
+      </div>
+
+      <div class="card wave">
+        <div class="section-title">Waveform</div>
+        <canvas id="wave"></canvas>
+        <div class="row">
+          <button class="btn" id="rewBtn">Rew</button>
+          <button class="btn" id="ffBtn">FF</button>
+          <div class="hint">Waveform shows live input while recording.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="card">
+        <div class="row">
+          <div class="hint">Shortcuts: R=Record, S=Stop, P=Pause/Resume, M=Marker.</div>
+          <div class="grow"></div>
+          <div class="hint">Built for SLT GEAR ONE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Core state
+    let audioCtx;
+    let mediaStream;
+    let sourceNode;
+    let analyser;       // frequency spectrum
+    let analyserWave;   // time-domain waveform
+    let monitorGain;
+    let mediaRecorder;
+    let chunks = [];
+    let isRecording = false;
+    let isPaused = false;
+    let startTime = 0;
+    let pauseAccum = 0;
+    let markers = [];
+    let currentDeviceId = null;
+    let rafId = null;
+    let peakHoldVal = 0;
+    let peakHoldTimer = 0;
+
+    const els = {
+      initBtn: document.getElementById('initBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      downloadAllBtn: document.getElementById('downloadAllBtn'),
+      inputSelect: document.getElementById('inputSelect'),
+      monitorToggle: document.getElementById('monitorToggle'),
+      autoGainToggle: document.getElementById('autoGainToggle'),
+      container: document.getElementById('container'),
+      bitrate: document.getElementById('bitrate'),
+      preRoll: document.getElementById('preRoll'),
+      punchIn: document.getElementById('punchIn'),
+      punchOut: document.getElementById('punchOut'),
+      clearTakesBtn: document.getElementById('clearTakesBtn'),
+      recordBtn: document.getElementById('recordBtn'),
+      pauseBtn: document.getElementById('pauseBtn'),
+      stopBtn: document.getElementById('stopBtn'),
+      markerBtn: document.getElementById('markerBtn'),
+      clock: document.getElementById('clock'),
+      led: document.getElementById('led'),
+      statusText: document.getElementById('statusText'),
+      peakFill: document.getElementById('peakFill'),
+      rmsFill: document.getElementById('rmsFill'),
+      peakHold: document.getElementById('peakHold'),
+      spectrum: document.getElementById('spectrum'),
+      wave: document.getElementById('wave'),
+      takeList: document.getElementById('takeList'),
+      rewBtn: document.getElementById('rewBtn'),
+      ffBtn: document.getElementById('ffBtn')
+    };
+
+    // Utility
+    const fmtTime = (ms) => {
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      const msr = Math.floor(ms % 1000);
+      const pad = (n, w=2) => n.toString().padStart(w, '0');
+      return `${pad(h)}:${pad(m)}:${pad(s)}.${pad(msr,3)}`;
+    };
+    const parseMMSS = (str) => {
+      if (!str) return null;
+      const m = str.trim().match(/^(\d{1,2}):(\d{2})$/);
+      if (!m) return null;
+      return (parseInt(m[1],10)*60 + parseInt(m[2],10)) * 1000;
+    };
+    const dpr = () => Math.max(1, Math.min(2, window.devicePixelRatio || 1)); // cap for perf
+
+    // Resize and scale a canvas to CSS size with device pixel ratio
+    function fitCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = dpr();
+      const w = Math.max(1, Math.floor(rect.width * ratio));
+      const h = Math.max(1, Math.floor(rect.height * ratio));
+      if (canvas.width !== w) canvas.width = w;
+      if (canvas.height !== h) canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(1, 0, 0, 1, 0, 0);     // reset transform
+      ctx.scale(ratio, ratio);                 // draw in CSS pixels
+      return { ctx, cssW: rect.width, cssH: rect.height };
+    }
+
+    // Permissions: ask once on Initialize or on load if allowed
+    async function initializeAudio(requestDeviceId = null) {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+      }
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+
+      // Stop previous stream
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+      }
+
+      const constraints = {
+        audio: {
+          deviceId: requestDeviceId ? { exact: requestDeviceId } : undefined,
+          channelCount: 2,
+          sampleRate: audioCtx.sampleRate,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }
+      };
+
+      mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // Populate inputs after permission
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = devices.filter(d => d.kind === 'audioinput');
+      els.inputSelect.innerHTML = '';
+      inputs.forEach((d, idx) => {
+        const opt = document.createElement('option');
+        opt.value = d.deviceId || '';
+        opt.textContent = d.label || `Input ${idx+1}`;
+        els.inputSelect.appendChild(opt);
+      });
+      if (requestDeviceId) {
+        els.inputSelect.value = requestDeviceId;
+      } else {
+        currentDeviceId = inputs[0]?.deviceId || null;
+        if (currentDeviceId) els.inputSelect.value = currentDeviceId;
+      }
+
+      // Build graph
+      if (sourceNode) sourceNode.disconnect();
+      sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+
+      // Monitor chain
+      monitorGain = audioCtx.createGain();
+      monitorGain.gain.value = 0.0; // default off
+      sourceNode.connect(monitorGain);
+      monitorGain.connect(audioCtx.destination);
+
+      // Analysers
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.85;
+
+      analyserWave = audioCtx.createAnalyser();
+      analyserWave.fftSize = 2048;
+      analyserWave.smoothingTimeConstant = 0.8;
+
+      // Tap input into analysers
+      sourceNode.connect(analyser);
+      sourceNode.connect(analyserWave);
+
+      // Prepare MediaRecorder
+      const mime = els.container.value;
+      const options = { mimeType: mime, audioBitsPerSecond: parseInt(els.bitrate.value,10) };
+      try {
+        mediaRecorder = new MediaRecorder(mediaStream, options);
+      } catch (e) {
+        // Fallback to default if requested mime unsupported
+        mediaRecorder = new MediaRecorder(mediaStream);
+      }
+      mediaRecorder.ondataavailable = (evt) => { if (evt.data?.size > 0) chunks.push(evt.data); };
+      mediaRecorder.onstop = onStopComplete;
+
+      // Monitoring toggle respected
+      monitorGain.gain.value = els.monitorToggle.checked ? 0.9 : 0.0;
+
+      updateStatus('Ready');
+      setLed('ready');
+      startMeters();
+    }
+
+    function updateStatus(text) { els.statusText.textContent = text; }
+    function setLed(state) {
+      els.led.classList.remove('rec','ready');
+      if (state === 'rec') els.led.classList.add('rec');
+      if (state === 'ready') els.led.classList.add('ready');
+    }
+
+    // Meters and visuals
+    function startMeters() {
+      cancelAnimationFrame(rafId);
+      peakHoldVal = 0;
+      peakHoldTimer = 0;
+
+      function draw() {
+        // Fit canvases to CSS size with DPR scaling (prevents 0×0 and blur)
+        const sp = fitCanvas(els.spectrum);
+        const spCtx = sp.ctx;
+        const cw = sp.cssW;
+        const ch = sp.cssH;
+
+        const ww = fitCanvas(els.wave);
+        const wCtx = ww.ctx;
+        const wW = ww.cssW;
+        const wH = ww.cssH;
+
+        // Spectrum data
+        const freqBins = analyser.frequencyBinCount;
+        const freqBuf = new Uint8Array(freqBins);
+        analyser.getByteFrequencyData(freqBuf);
+
+        spCtx.clearRect(0, 0, cw, ch);
+        const barW = Math.max(1, cw / freqBins);
+        for (let i = 0; i < freqBins; i++) {
+          const h = (freqBuf[i] / 255) * ch;
+          const x = i * barW;
+          spCtx.fillStyle = `hsl(${180 + (i/freqBins)*100}, 70%, 55%)`;
+          spCtx.fillRect(x, ch - h, barW, h);
+        }
+
+        // Waveform data
+        const tLen = analyserWave.fftSize;
+        const timeData8 = new Uint8Array(tLen);
+        analyserWave.getByteTimeDomainData(timeData8);
+
+        wCtx.clearRect(0, 0, wW, wH);
+        wCtx.strokeStyle = '#5cc8ff';
+        wCtx.lineWidth = 2;
+        wCtx.beginPath();
+        for (let i = 0; i < tLen; i++) {
+          const x = (i / (tLen - 1)) * wW;
+          const y = (timeData8[i] / 255) * wH;
+          if (i === 0) wCtx.moveTo(x, y);
+          else wCtx.lineTo(x, y);
+        }
+        wCtx.stroke();
+
+        // Peak/RMS from float time domain
+        const timeDataF = new Float32Array(tLen);
+        analyserWave.getFloatTimeDomainData(timeDataF);
+        let peak = 0, sumSq = 0;
+        for (let i = 0; i < tLen; i++) {
+          const v = Math.abs(timeDataF[i]);
+          if (v > peak) peak = v;
+          sumSq += timeDataF[i] * timeDataF[i];
+        }
+        const rms = Math.sqrt(sumSq / tLen);
+        const peakDb = 20 * Math.log10(peak || 1e-7);
+        const rmsDb = 20 * Math.log10(rms || 1e-7);
+        const norm = (db) => {
+          const min = -60, max = 0;
+          const cl = Math.max(min, Math.min(max, db));
+          return ((cl - min) / (max - min)) * 100;
+        };
+        els.peakFill.style.width = `${norm(peakDb)}%`;
+        els.rmsFill.style.width = `${norm(rmsDb)}%`;
+
+        // Peak hold bar
+        peakHoldVal = Math.max(peakHoldVal * 0.98, norm(peakDb));
+        els.peakHold.style.width = `${peakHoldVal}%`;
+        peakHoldTimer++;
+        if (peakHoldTimer > 50) { peakHoldVal *= 0.95; peakHoldTimer = 0; }
+
+        // Auto gain protect (monitor only)
+        if (els.autoGainToggle.checked) {
+          const over = peakDb > -3;
+          const cur = monitorGain.gain.value;
+          const next = over ? Math.max(0.2, cur - 0.05) : Math.min(0.9, cur + 0.02);
+          monitorGain.gain.value = next;
+        }
+
+        // Clock
+        if (isRecording && !isPaused) {
+          const now = performance.now();
+          const elapsed = now - startTime - pauseAccum;
+          els.clock.textContent = fmtTime(elapsed);
+
+          // Punch-out auto stop
+          const pin = parseMMSS(els.punchIn.value);
+          const pout = parseMMSS(els.punchOut.value);
+          if (pin !== null && pout !== null && elapsed > pout) stopRecording();
+        }
+
+        rafId = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // Transport logic
+    async function startRecording() {
+      if (!mediaRecorder || isRecording) return;
+
+      // Pre-roll
+      const pr = parseInt(els.preRoll.value, 10) || 0;
+      updateStatus(pr ? `Pre-roll ${pr}s` : 'Recording');
+      setLed('rec');
+
+      const doStart = () => {
+        chunks = [];
+        markers = [];
+        mediaRecorder.start(250); // 250ms chunks
+        isRecording = true;
+        isPaused = false;
+        startTime = performance.now();
+        pauseAccum = 0;
+      };
+
+      if (pr) {
+        await new Promise(res => setTimeout(res, pr * 1000));
+      }
+      doStart();
+    }
+
+    function pauseResume() {
+      if (!mediaRecorder || !isRecording) return;
+      if (!isPaused) {
+        mediaRecorder.pause();
+        isPaused = true;
+        updateStatus('Paused');
+      } else {
+        mediaRecorder.resume();
+        isPaused = false;
+        updateStatus('Recording');
+      }
+    }
+
+    function stopRecording() {
+      if (!mediaRecorder || !isRecording) return;
+      mediaRecorder.stop();
+      isRecording = false;
+      setLed('ready');
+      updateStatus('Stopped');
+    }
+
+    function onStopComplete() {
+      const blob = new Blob(chunks, { type: mediaRecorder.mimeType || els.container.value });
+      const url = URL.createObjectURL(blob);
+      const name = `SLT_Take_${new Date().toISOString().replace(/[:.]/g,'-')}.${mimeExt(blob.type)}`;
+      addTake({ url, blob, name, markers: [...markers], size: blob.size });
+      els.clock.textContent = '00:00:00.000';
+    }
+
+    function mimeExt(type) {
+      if (type.includes('webm')) return 'webm';
+      if (type.includes('ogg')) return 'ogg';
+      if (type.includes('mp4')) return 'mp4';
+      return 'wav';
+    }
+
+    function addTake(take) {
+      const item = document.createElement('div');
+      item.className = 'item';
+      const play = document.createElement('button');
+      play.className = 'btn';
+      play.textContent = 'Play';
+      const a = new Audio(take.url);
+      play.onclick = () => a.play();
+
+      const info = document.createElement('div');
+      info.innerHTML = `<div><strong>${take.name}</strong></div>
+                        <div class="meta">${(take.size/1024).toFixed(1)} KB • ${take.blob.type}</div>
+                        <div class="meta">Markers: ${take.markers.map(m => fmtTime(m)).join(', ') || 'None'}</div>`;
+
+      const actions = document.createElement('div');
+      const dl = document.createElement('a');
+      dl.className = 'btn';
+      dl.download = take.name;
+      dl.href = take.url;
+      dl.textContent = 'Download';
+      const remove = document.createElement('button');
+      remove.className = 'btn danger';
+      remove.textContent = 'Delete';
+      remove.onclick = () => { item.remove(); URL.revokeObjectURL(take.url); };
+
+      actions.appendChild(dl);
+      actions.appendChild(remove);
+
+      item.appendChild(play);
+      item.appendChild(info);
+      item.appendChild(actions);
+      els.takeList.prepend(item);
+    }
+
+    // Markers
+    function addMarker() {
+      if (!isRecording) return;
+      const now = performance.now();
+      const t = now - startTime - pauseAccum;
+      markers.push(t);
+      els.statusText.textContent = `Marker at ${fmtTime(t)}`;
+      setTimeout(() => updateStatus('Recording'), 1000);
+    }
+
+    // Device switching (no re-prompt if already granted)
+    async function switchInput(deviceId) {
+      currentDeviceId = deviceId;
+      await initializeAudio(deviceId);
+    }
+
+    // Event bindings
+    els.initBtn.onclick = async () => {
+      try {
+        await initializeAudio(currentDeviceId);
+      } catch (e) {
+        alert('Microphone permission is required. Please allow access.');
+        console.error(e);
+      }
+    };
+    els.resetBtn.onclick = async () => {
+      await initializeAudio(currentDeviceId);
+    };
+    els.downloadAllBtn.onclick = () => {
+      const links = els.takeList.querySelectorAll('a[download]');
+      links.forEach(l => l.click());
+    };
+    els.inputSelect.onchange = async (e) => { await switchInput(e.target.value); };
+    els.monitorToggle.onchange = () => { monitorGain.gain.value = els.monitorToggle.checked ? 0.9 : 0.0; };
+    els.recordBtn.onclick = () => startRecording();
+    els.pauseBtn.onclick = () => pauseResume();
+    els.stopBtn.onclick = () => stopRecording();
+    els.markerBtn.onclick = () => addMarker();
+    els.clearTakesBtn.onclick = () => { els.takeList.innerHTML = ''; };
+    els.rewBtn.onclick = () => { peakHoldVal = 0; };
+    els.ffBtn.onclick = () => { peakHoldVal = 100; };
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'r') startRecording();
+      else if (k === 's') stopRecording();
+      else if (k === 'p') pauseResume();
+      else if (k === 'm') addMarker();
+    });
+
+    // Auto-init on load to ask permission once (may be blocked without user gesture)
+    window.addEventListener('load', async () => {
+      try {
+        await initializeAudio();
+      } catch (e) {
+        // If user gesture required, show status and rely on Initialize button
+        console.warn('Init deferred:', e);
+        updateStatus('Click Initialize to allow microphone');
+      }
+    });
+
+    // Handle resize so canvases remain crisp and non-zero
+    window.addEventListener('resize', () => {
+      if (rafId) {
+        // Next frame will re-fit canvases via fitCanvas()
+      }
+    });
+  </script>
+</body>
+</html>
+
